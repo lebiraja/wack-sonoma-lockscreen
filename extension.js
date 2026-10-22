@@ -19,11 +19,14 @@ import {
 import { WackClock } from './src/main/wackClock.js';
 import { getWallpaperAlpha, getWallpaperPromptColor, clearCache, initCache, precacheSlideshow } from './src/main/alphaManager.js';
 import { WackLayout } from './src/main/layoutManager.js';
+import { findCalmClockFraction } from './src/main/clockPlacement.js';
 import { NotificationManager } from './src/main/notificationManager.js';
 import {
     PROMPT_BLUR_RADIUS,
     BACKGROUND_BLURRING_BRIGHTNESS,
     CUPERTINO_UNLOCK_FADE_DURATION,
+    DATE_LABEL_HEIGHT,
+    TIME_LABEL_HEIGHT_FALLBACK,
     CROSSFADE_SPEED_SLOW,
     CROSSFADE_SPEED_FAST,
     A11Y_BUTTON_WIDTH,
@@ -437,6 +440,7 @@ export default class WackLockscreenClockExtension extends Extension {
             'changed::clock-weight', syncClockOptions,
             'changed::clock-format', syncClockOptions,
             'changed::clock-tint', syncClockOptions,
+            'changed::clock-smart-placement', () => this._updateClockPlacement(),
             'changed::status-corner', syncStatusCorner,
             'changed::password-indicators', () => this._unlockDialogController?.syncPasswordIndicators(),
             this
@@ -666,6 +670,8 @@ export default class WackLockscreenClockExtension extends Extension {
         if (this._clockLayoutManager?.updateHintStyle)
             this._clockLayoutManager.updateHintStyle(promptColor, alpha);
 
+        this._updateClockPlacement(isColor ? null : uri, seq);
+
         // <GDM_EXCLUDE>
         if (this._crossSessionManager)
             this._crossSessionManager.setClockAlphaAndPromptColor(alpha, promptColor, inactiveAlpha, inactivePromptColor);
@@ -813,6 +819,40 @@ export default class WackLockscreenClockExtension extends Extension {
             _logError(`[WACK/Extension] custom wallpaper update failed: ${e}`));
     }
     _setCustomWallpaperBlur(radius, brightness) { if (this._wallpaperManager) this._wallpaperManager.setCustomWallpaperBlur(radius, brightness); }
+
+    // Slides the clock to the calmest wallpaper band; a null uri re-uses the last wallpaper.
+    async _updateClockPlacement(uri = this._placementUri, seq = this._wallpaperUpdateSeq) {
+        this._placementUri = uri;
+        const layout = this._clockLayoutManager;
+        if (!layout)
+            return;
+
+        if (!uri || !this._settings?.get_boolean('clock-smart-placement')) {
+            layout.setTopFraction(null);
+            return;
+        }
+
+        const monitor = Main.layoutManager.primaryMonitor;
+        if (!monitor)
+            return;
+        try {
+            const [, clockWidth] = layout.timeLabel?.get_preferred_width(-1) ?? [0, 0];
+            const [, timeHeight] = layout.timeLabel?.get_preferred_height(-1) ?? [0, TIME_LABEL_HEIGHT_FALLBACK];
+            const fraction = await findCalmClockFraction({
+                uri,
+                pictureOptions: this._bgSettings?.get_string('picture-options') ?? 'zoom',
+                monitorWidth: monitor.width,
+                monitorHeight: monitor.height,
+                clockWidth: Math.max(clockWidth, 320),
+                clockHeight: DATE_LABEL_HEIGHT + timeHeight,
+            });
+            if (seq !== this._wallpaperUpdateSeq || this._clockLayoutManager !== layout)
+                return;
+            layout.setTopFraction(fraction);
+        } catch (e) {
+            _logError(`[WACK/Extension] Smart clock placement failed: ${e}`);
+        }
+    }
 
     _positionClock() { if (this._clockLayoutManager) this._clockLayoutManager.positionClock(); }
     _positionHint() { if (this._clockLayoutManager) this._clockLayoutManager.positionHint(); }

@@ -3,6 +3,7 @@ import St from 'gi://St';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import {
     DATETIME_TOP_FRACTION,
+    CLOCK_PLACEMENT_DURATION,
     HINT_VERTICAL_FRACTION,
     HINT_NOTIF_MARGIN,
     FADE_OUT_SCALE,
@@ -23,6 +24,7 @@ export class ClockLayoutManager {
         this.overflowLabel = null;
         this.hintText = '';
         this.overflowActive = false;
+        this.topFraction = DATETIME_TOP_FRACTION;
     }
 
     setup(dialog, lockDialogGroup) {
@@ -108,7 +110,7 @@ export class ClockLayoutManager {
         const timeLabel = this.timeLabel;
         if (!wrapper || !dateLabel || !timeLabel) return;
 
-        const topY = monitorY + Math.floor(monitorHeight * DATETIME_TOP_FRACTION);
+        const topY = monitorY + Math.floor(monitorHeight * this.topFraction);
 
         dateLabel.set_position(0, 0);
         timeLabel.set_position(0, DATE_LABEL_HEIGHT);
@@ -116,6 +118,29 @@ export class ClockLayoutManager {
         wrapper.set_position(monitorX, topY);
         wrapper.set_width(monitorWidth);
         wrapper.set_pivot_point(0.5, 0.5);
+    }
+
+    /**
+     * Slides the clock to a new top edge. Falls back to the default position when null.
+     * @param {number|null} fraction Top edge as a fraction of monitor height
+     */
+    setTopFraction(fraction) {
+        const next = fraction ?? DATETIME_TOP_FRACTION;
+        if (next === this.topFraction)
+            return;
+        this.topFraction = next;
+
+        const monitor = Main.layoutManager.primaryMonitor;
+        const wrapper = this.clockWrapper;
+        if (!monitor || !wrapper)
+            return;
+
+        const y = monitor.y + Math.floor(monitor.height * next);
+        wrapper.ease({
+            y,
+            duration: CLOCK_PLACEMENT_DURATION,
+            mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+        });
     }
 
     positionHint() {

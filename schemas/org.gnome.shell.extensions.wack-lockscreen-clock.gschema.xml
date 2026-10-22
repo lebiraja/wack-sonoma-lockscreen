@@ -136,6 +136,11 @@
       <summary>Clock format</summary>
       <description>Use the system 12/24-hour setting, or override it on the lockscreen.</description>
     </key>
+    <key name="clock-smart-placement" type="b">
+      <default>true</default>
+      <summary>Smart clock placement</summary>
+      <description>Slide the clock to the calmest part of the wallpaper so it does not sit on top of logos, faces or text.</description>
+    </key>
     <key name="clock-tint" type="b">
       <default>false</default>
       <summary>Wallpaper-tinted clock</summary>

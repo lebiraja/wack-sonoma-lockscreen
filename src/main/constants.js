@@ -9,6 +9,13 @@ export const CROSSFADE_TIME = 500; // Animation duration for transitions
 
 // Visual positioning constants
 export const DATETIME_TOP_FRACTION = 0.09; // Date/Time offset from the top (percentage of screen height)
+// Smart clock placement: the clock may slide within this band of the screen height to dodge busy wallpaper detail
+export const CLOCK_PLACEMENT_MIN_FRACTION = 0.03;
+export const CLOCK_PLACEMENT_MAX_FRACTION = 0.34;
+export const CLOCK_PLACEMENT_STEP = 0.005;
+export const CLOCK_PLACEMENT_DISTANCE_PENALTY = 1.5; // Relative cost of moving away from DATETIME_TOP_FRACTION
+export const CLOCK_PLACEMENT_MIN_GAIN = 0.3; // A candidate must be this much calmer than the default to win
+export const CLOCK_PLACEMENT_DURATION = 350; // ms, slide to the chosen position
 export const HINT_VERTICAL_FRACTION = 0.875; // Hint offset from the top
 export const HINT_NOTIF_MARGIN = 16; // Minimum vertical gap between hint and notifications
 export const FADE_OUT_SCALE = 0.3; // Scale factor when the clock shrinks during unlock transition

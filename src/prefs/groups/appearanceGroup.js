@@ -122,6 +122,10 @@ export function buildAppearanceGroup(settings, _, settingsSignalIds) {
 
     group.add(dateStyleRow);
 
+    group.add(buildSwitchRow(settings, 'clock-smart-placement',
+        _('Smart Clock Placement'),
+        _('Slide the clock to the calmest part of the wallpaper so it does not cover logos, faces or text.')));
+
     group.add(buildSwitchRow(settings, 'clock-tint',
         _('Wallpaper-Tinted Clock'),
         _('Tint the clock and date with a light shade of the wallpaper colour.')));
